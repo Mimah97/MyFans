@@ -9,8 +9,10 @@ import {
   Query,
   UseInterceptors,
   ClassSerializerInterceptor,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { PostDto, CreatePostDto, UpdatePostDto } from './dto';
 import { PaginationDto, PaginatedResponseDto } from '../common/dto';
@@ -35,8 +37,25 @@ export class PostsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all posts (paginated)' })
-  @ApiResponse({ status: 200, description: 'Paginated posts list' })
+  @ApiOperation({
+    summary: 'List all posts (paginated)',
+    description:
+      'Cursor-paginated post list. Pass `cursor` and `limit`; responses include `data`, `limit`, `nextCursor`, and `hasMore`.',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Pagination cursor (`nextCursor` from the previous page)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page (default 20, max 100)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cursor-paginated posts list (`data`, `limit`, `nextCursor`, `hasMore`)',
+  })
   async findAll(
     @Query() pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<PostDto>> {
@@ -44,8 +63,26 @@ export class PostsController {
   }
 
   @Get('author/:authorId')
-  @ApiOperation({ summary: 'List posts by author (paginated)' })
-  @ApiResponse({ status: 200, description: 'Paginated author posts list' })
+  @ApiOperation({
+    summary: 'List posts by author (paginated)',
+    description:
+      'Cursor-paginated author posts. Pass `cursor` and `limit`; responses include `data`, `limit`, `nextCursor`, and `hasMore`.',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Pagination cursor (`nextCursor` from the previous page)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page (default 20, max 100)',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Cursor-paginated author posts list (`data`, `limit`, `nextCursor`, `hasMore`)',
+  })
   async findByAuthor(
     @Param('authorId') authorId: string,
     @Query() pagination: PaginationDto,
@@ -75,8 +112,10 @@ export class PostsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a post (sets deletedAt / deletedBy)' })
   @ApiResponse({ status: 204, description: 'Post soft-deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Post not found or already deleted' })
   async remove(
     @Param('id') id: string,
     @Query('deletedBy') deletedBy?: string,
